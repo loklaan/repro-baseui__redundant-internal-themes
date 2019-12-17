@@ -1,50 +1,45 @@
-# Example app with styletron
+# Reproduction: Saving KB's by excluding internal BaseUI Themes
 
-## Deploy your own
+## Background
 
-Deploy the example using [ZEIT Now](https://zeit.co/now):
+A user of BaseUI wants to use a completely custom "theme", given to `ThemeProvider`. Or, they prefer to "own" all of their theme, even that means copying over BaseUI's Light/Dark theme...
 
-[![Deploy with ZEIT Now](https://zeit.co/button)](https://zeit.co/new/project?template=https://github.com/zeit/next.js/tree/canary/examples/with-styletron)
+Upon bundling this user's app, they find that a majority of `baseui/themes` is being added, even if they're no longer using it due to having their own custom theme.
 
-## How to use
+The user doesn't want unused KB's in their bundle.
 
-### Using `create-next-app`
+## Problem Hunt
 
-Execute [`create-next-app`](https://github.com/zeit/next.js/tree/canary/packages/create-next-app) with [Yarn](https://yarnpkg.com/lang/en/docs/cli/create/) or [npx](https://github.com/zkat/npx#readme) to bootstrap the example:
+1. [NextJS](https://nextjs.org/) was used for the bundling and serving the Frontend Repro.
+2. Webpack's [Analyse](https://webpack.github.io/analyse) App was used for inspecting the module tree.
+3. In the Frontend Repro, we explicitly _never_ import any of BaseUI's themes (`LightTheme`/`DarkTheme`)
+4. Instead we use our own full theme, found in `theme.js` 
 
-```bash
-npx create-next-app --example with-styletron with-styletron-app
-# or
-yarn create next-app --example with-styletron with-styletron-app
+By analysing the `stats.json` of a normal bundle, we find that BaseUI's `ThemeProvider` module always imports the `LightTheme`, regardless of whether you are using it not.
+
+## Solutions
+
+A "solution at the source" would be BaseUI removing the "default" inclusion of `LightTheme`, and instead demanding that the user _always_ provide a theme.
+
+To verify the effect of removing `LightTheme` (the "parent" module of several others from `baseui/themes`), we [null](https://github.com/webpack-contrib/null-loader) it.
+
+_Before_  
+```
+Page            Size
+┌ * /           1.12 kB
+├   /_app       268 kB
+├   /_document
+└   /_error     7.33 kB
 ```
 
-### Download manually
-
-Download the example:
-
-```bash
-curl https://codeload.github.com/zeit/next.js/tar.gz/canary | tar -xz --strip=2 next.js-canary/examples/with-styletron
-cd with-styletron
+_After_  
+```
+Page            Size
+┌ * /           1.12 kB
+├   /_app       248 kB
+├   /_document
+└   /_error     7.33 kB
 ```
 
-Install it and run:
-
-```bash
-npm install
-npm run dev
-# or
-yarn
-yarn dev
-```
-
-Deploy it to the cloud with [now](https://zeit.co/now) ([download](https://zeit.co/download)):
-
-```bash
-now
-```
-
-## The idea behind the example
-
-This example features how yo use a different styling solution than [styled-jsx](https://github.com/zeit/styled-jsx) that also supports universal styles. That means we can serve the required styles for the first render within the HTML and then load the rest in the client. In this case we are using [styletron](https://github.com/rtsao/styletron).
-
-For this purpose we are extending the `<Document />` and injecting the server side rendered styles into the `<head>`.
+> **Total: 268kB - 248kB = 20kb**  
+> _Yes, that's +7% reduction in bundle size!_

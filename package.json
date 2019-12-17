@@ -2,15 +2,20 @@
   "name": "with-styletron",
   "version": "1.0.0",
   "scripts": {
-    "dev": "next",
-    "build": "next build",
+    "build:with-internal": "next build",
+    "build:sans-internal": "DROP_INTERNAL_THEME=true next build",
     "start": "next start"
   },
   "dependencies": {
+    "baseui": "^9.30.0",
     "next": "latest",
     "react": "^16.8.0",
     "react-dom": "^16.8.0",
     "styletron-engine-atomic": "^1.1.2",
     "styletron-react": "^5.0.1"
+  },
+  "devDependencies": {
+    "@next/bundle-analyzer": "^9.1.5",
+    "null-loader": "^3.0.0"
   }
 }
